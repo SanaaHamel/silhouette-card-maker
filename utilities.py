@@ -617,7 +617,7 @@ def draw_outline(
                 width=1,
             )
 
-def add_front_back_pages(front_page: Image.Image, back_page: Image.Image, pages: List[Image.Image], page_width: int, page_height: int, ppi_ratio: float, template: str, only_fronts: bool, label: str, orientation: Orientation, label_margin_px: int, borderless: bool):
+def add_front_back_pages(front_page: Image.Image, back_page: Image.Image, pages: List[Image.Image], page_width: int, page_height: int, ppi_ratio: float, template: str, only_fronts: bool, label: str, orientation: Orientation, label_margin_px: int, borderless: bool, show_label: bool = True):
     font = ImageFont.truetype(os.path.join(asset_directory, 'arial.ttf'), 40 * ppi_ratio)
 
     num_sheet = len(pages) + 1
@@ -627,6 +627,8 @@ def add_front_back_pages(front_page: Image.Image, back_page: Image.Image, pages:
     label_text = f'sheet: {num_sheet}, template: {template}'
     if label is not None:
         label_text = f'label: {label}, {label_text}'
+    if not show_label:
+        label_text = '' # suppress label
 
     # Label goes on the short side of the paper, opposite the top-left black square.
     # Landscape: short sides are left/right; black square top-left → label on RIGHT.
@@ -785,6 +787,8 @@ def generate_pdf(
     show_outline: bool = False,
     specialty: Optional[str] = None,
     borderless: bool = False,
+    show_label: bool = True,
+    show_registration: bool = True,
 ):
     # Sanity checks for the different directories
     f_path = Path(front_dir_path)
@@ -990,7 +994,7 @@ def generate_pdf(
         effective_thickness,
         effective_length,
         layout_config.ppi,
-        registration,
+        registration if show_registration else None,
         orientation,
     ) as reg_im:
         reg_im = reg_im.resize([math.floor(reg_im.width * ppi_ratio), math.floor(reg_im.height * ppi_ratio)])
@@ -1137,7 +1141,8 @@ def generate_pdf(
                 label,
                 orientation,
                 label_margin_px,
-                borderless
+                borderless,
+                show_label=show_label,
             )
 
         if len(pages) == 0:

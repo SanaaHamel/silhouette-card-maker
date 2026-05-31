@@ -1,5 +1,5 @@
 import math
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
@@ -36,7 +36,7 @@ def generate_reg_mark(
     thickness: str,
     length: str,
     dpi: int,
-    registration: Registration,
+    registration: Optional[Registration],
     orientation: Orientation = Orientation.LANDSCAPE,
 ) -> Image.Image:
     """Generate a registration mark image for the given paper size.
@@ -48,7 +48,7 @@ def generate_reg_mark(
         thickness: Line thickness for registration marks.
         length: Line length for registration marks.
         dpi: Resolution in dots per inch.
-        registration: Registration pattern (THREE or FOUR).
+        registration: Registration pattern (THREE or FOUR). Omit to skip drawing.
         orientation: Page orientation. Portrait swaps width/height.
 
     Returns:
@@ -78,6 +78,16 @@ def generate_reg_mark(
     ax.set_aspect('equal')
     ax.axis('off')
     ax.set_facecolor('white')
+
+    # blank canvas w/ correct DPI, that's all we need.
+    # FIXME: deduplicate w/ lower logic, or just have this return a fig and the caller convert.
+    if registration is None:
+        img_buf = io.BytesIO()
+        plt.savefig(img_buf, format='jpg')
+        img_buf.seek(0)
+        img = Image.open(img_buf)
+        plt.close(fig)  # Close the figure to free memory
+        return img
 
     if registration == Registration.THREE:
         # Add filled black square (5x5mm at inset from left and top)
@@ -234,7 +244,7 @@ def compute_grid_fit(
 
     | bleed | card | bleed | card | bleed |
       ^---------------------------------^ usable
-    
+
     But bleed can extend beyond the usable area. Only cards must be in the usable area.
 
     n cards require:
@@ -449,4 +459,3 @@ def generate_layout(
         y_pos=y_pos,
         max_length_mm=max_length_mm,
     )
-
